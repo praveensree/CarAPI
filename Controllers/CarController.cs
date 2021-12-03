@@ -1,4 +1,4 @@
-﻿using Dapper;
+using Dapper;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -37,7 +37,7 @@ namespace Car_API.Controllers
             using var con = new SqlConnection(connectionString);
             con.Open();
         
-            var cars = con.Query<Car>($"select * from Cars where Id={Id}").ToList();
+            var cars = con.Query<Car>($"select * from Cars where Id={Id}");
             return Ok(cars);
         }
 
@@ -62,14 +62,24 @@ namespace Car_API.Controllers
         }
 
         // PUT api/<CarController>/5
-        [HttpPut("{id}/{price}")]
-        public IActionResult Put(int id, int price)
+        [HttpPut("{id}")]
+        public IActionResult Put(int id, [FromBody] viewModelCar value)
         {
             using var con = new SqlConnection(connectionString);
             con.Open();
 
-            var cars = con.Query<Car>($"Update Cars set Price={price} where Id={id}").ToList();
-            return Ok("Updated successfully");
+            var Query = "Update Cars set Name = @name, Price=@price where Id=@id";
+            var dp = new DynamicParameters();
+            dp.Add("@name", value.Name, System.Data.DbType.AnsiString, System.Data.ParameterDirection.Input, 255);
+            dp.Add("@price", value.Price);
+            dp.Add("@id", id);
+
+            int res = con.Execute(Query, dp);
+            if (res > 0)
+            {
+                return Ok("Updated successfully");
+            }
+            return Ok("Not Updated");
         }
 
         // DELETE api/<CarController>/5
@@ -84,3 +94,4 @@ namespace Car_API.Controllers
         }
     }
 }
+
